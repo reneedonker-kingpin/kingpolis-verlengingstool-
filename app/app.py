@@ -26,21 +26,31 @@ if uploaded_file is not None:
     reader = PyPDF2.PdfReader(uploaded_file)
     text = ""
     for page in reader.pages:
-        text += page.extract_text()
+        text += page.extract_text() + "\n"
+        
+    with st.expander("Klik hier om de ruwe tekst uit de PDF te zien (handig voor controle)"):
+        st.text(text)
         
     try:
-        polisnummer = re.search(r'Polisnummer:\s*(Po-\d+)', text).group(1)
-        postcode = re.search(r'(\d{4})\s?[A-Z]{2}', text).group(1)
-        naam_match = re.search(r'([A-Z]\.\s*[A-Za-z]+)\n', text)
-        naam = naam_match.group(1).split()[-1] if naam_match else "Klant"
-        einddatum = re.search(r'Einddatum\s*(\d{2}-\d{2}-\d{4})', text).group(1)
-        waarde_match = re.search(r'Verzekerde waarde\s*EUR\s*([\d\.,]+)', text)
+        polis_match = re.search(r'(Po-\d+)', text)
+        polisnummer = polis_match.group(1) if polis_match else "[Polisnummer]"
+        
+        pc_match = re.search(r'(\d{4})\s?[A-Z]{2}', text)
+        postcode = pc_match.group(1) if pc_match else "0000"
+        
+        naam_match = re.search(r'([A-Z]\.\s*[A-Za-z\s]+?)\n', text)
+        naam = naam_match.group(1).split()[-1] if naam_match else "[Naam]"
+        
+        eind_match = re.search(r'Einddatum[\s\S]*?(\d{2}-\d{2}-\d{4})', text, re.IGNORECASE)
+        einddatum = eind_match.group(1) if eind_match else "[Datum]"
+        
+        waarde_match = re.search(r'EUR\s*([\d\.,]+)', text)
         waarde = float(waarde_match.group(1).replace('.', '').replace(',', '.')) if waarde_match else 0.0
         
-        type_fiets = "E-bike" if "Garantie" in text else "Fiets" 
+        type_fiets = "E-bike" if "Garantie" in text or "e-bike" in text.lower() else "Fiets" 
         premie = get_premie(postcode, waarde, type_fiets)
         
-        st.success(f"Gegevens ingelezen:\nNaam: {naam} | Polis: {polisnummer} | Waarde: €{waarde} | Type: {type_fiets} | Premie: €{premie}")
+        st.success(f"Gegevens uitgelezen:\nNaam: {naam} | Polis: {polisnummer} | Waarde: €{waarde} | Type: {type_fiets} | Premie: €{premie}")
 
         doc = Document()
         doc.add_paragraph(f"Beste meneer, mevrouw {naam},") 
@@ -68,4 +78,4 @@ if uploaded_file is not None:
         )
         
     except Exception as e:
-        st.error("Er ging iets mis bij het uitlezen. Controleer of dit het juiste polisblad is.")
+        st.error(f"Er ging een technisch detail mis. Foutcode: {e}")
