@@ -52,4 +52,39 @@ if uploaded_file is not None:
         type_fiets = "E-bike" if "Garantie" in text or "e-bike" in text.lower() else "Fiets" 
         premie = get_premie(postcode, waarde, type_fiets)
         
-        st.success(f"Gegevens uitgelezen:\nNaam: {naam} | Polis: {polisnummer_v} | Waarde: €{waarde} | Type: {type_fi
+        st.success(f"Gegevens uitgelezen:\nNaam: {naam} | Polis: {polisnummer_v} | Waarde: €{waarde} | Type: {type_fiets} | Premie: €{premie}")
+
+        doc = Document()
+        
+        # Hier stellen we het standaard lettertype in op Arial grootte 11
+        style = doc.styles['Normal']
+        font = style.font
+        font.name = 'Arial'
+        font.size = Pt(11)
+
+        doc.add_paragraph(f"Beste meneer, mevrouw {naam},") 
+        doc.add_paragraph()
+        doc.add_paragraph(f"U hebt op dit moment bij Kingpolis uw fiets verzekerd. Deze fietsverzekering loopt op {einddatum} af. U moet er toch niet aan denken dat uw fiets nu gestolen wordt! Daarom bieden wij u aan uw fiets doorlopend te verzekeren tegen Casco Compleet (Dekking: diefstal, cascoschade, persoonlijke eigendommen, ongevallen en pechhulp onderweg).")
+        doc.add_paragraph()
+        doc.add_paragraph(f"Wilt u gebruik maken van dit aanbod dan verzoeken wij u de premie van € {premie} aan ons over te maken op rekening nummer NL57ABNA 0511 99 40 52 ten name van Stichting Betalingscentrum King onder vermelding van polisnummer {polisnummer_v}.")
+        doc.add_paragraph()
+        doc.add_paragraph("Uw fiets is bij tijdige betaling aansluitend op uw lopende verzekering doorlopend verzekerd tegen Casco Compleet.")
+        doc.add_paragraph()
+        doc.add_paragraph("Vertrouwende erop u hiermee voldoende te hebben geïnformeerd.")
+        doc.add_paragraph()
+        doc.add_paragraph("Met vriendelijke groet,")
+        doc.add_paragraph("Kingpolis")
+        
+        buffer = BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+        
+        st.download_button(
+            label="Download Verlengingsbrief (Word)",
+            data=buffer,
+            file_name=f"Verlengingsvoorstel_{polisnummer_v}.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        
+    except Exception as e:
+        st.error(f"Er ging een technisch detail mis. Foutcode: {e}")
